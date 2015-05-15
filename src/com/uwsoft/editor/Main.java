@@ -18,16 +18,28 @@
 
 package com.uwsoft.editor;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.jglfw.JglfwApplication;
 import com.badlogic.gdx.backends.jglfw.JglfwApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl.LwjglFrame;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.PixmapPacker;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
+import com.badlogic.gdx.tools.bmfont.BitmapFontWriter;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
+import com.badlogic.gdx.utils.Array;
 import com.uwsoft.editor.utils.AppConfig;
 import org.apache.commons.lang3.SystemUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 
 public class Main {
 
@@ -58,14 +70,71 @@ public class Main {
     }
 
     public static void main(String[] argv) throws Exception {
-        String input = "../art/textures";
+        generateBitmapFonts();
+        generateTextureAtlas();
+        new Main();
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    }
+
+    public static void generateBitmapFonts() {
+        FileHandle fileHandle = new FileHandle(new File("../assets/freetypefonts/Roboto-Medium.ttf"));
+        generateFontWriteFiles("Roboto-Medium", fileHandle, 32, 1280, 1280);
+    }
+
+    public static void generateTextureAtlas() {
+        String input = "../art/fonts";
         String output = "style";
         String packFileName = "uiskin";
         TexturePacker.Settings settings =  new TexturePacker.Settings();
         settings.flattenPaths = true;
         TexturePacker.processIfModified(input, output, packFileName);
-        new Main();
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    }
+    //------------------------------------------------
+    private static void generateFontWriteFiles(String fontName, FileHandle fontFile, int fontSize, int pageWidth, int pageHeight) {
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(fontFile);
+        PixmapPacker packer = new PixmapPacker(pageWidth, pageHeight, Pixmap.Format.RGBA8888, 2, false);
+        FreeTypeFontGenerator.FreeTypeFontParameter parameters = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameters.packer = packer;
+        parameters.size = 32;
+        FreeTypeFontGenerator.FreeTypeBitmapFontData fontData = generator.generateData(parameters);
+        Array<PixmapPacker.Page> pages = packer.getPages();
+        TextureRegion[] texRegions = new TextureRegion[pages.size];
+        for (int i=0; i<pages.size; i++) {
+            PixmapPacker.Page p = pages.get(i);
+            Texture tex = new Texture(new PixmapTextureData(p.getPixmap(), p.getPixmap().getFormat(), false, false, true)) {
+                @Override
+                public void dispose () {
+                    super.dispose();
+                    getTextureData().consumePixmap().dispose();
+                }
+            };
+            tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            texRegions[i] = new TextureRegion(tex);
+        }
+        BitmapFont bitmapFont = generator.generateFont(parameters);
+        saveFontToFile(bitmapFont, fontSize, fontName, packer);
+        generator.dispose();
+        packer.dispose();
+       // return bitmapFont;
     }
 
+    private static boolean saveFontToFile(BitmapFont font, int fontSize, String fontName, PixmapPacker packer) {
+        FileHandle fontFile = getFontFile(fontName + ".fnt"); // .fnt path
+        FileHandle pixmapDir = getFontFile(fontName); // png dir path
+        BitmapFontWriter.setOutputFormat(BitmapFontWriter.OutputFormat.Text);
+
+        String[] pageRefs = BitmapFontWriter.writePixmaps(packer.getPages(), pixmapDir, fontName);
+        System.out.println(String.format("Saving font [%s]: fontfile: %s, pixmapDir: %s\n", fontName, fontFile, pixmapDir));
+        // here we must add the png dir to the page refs
+        for (int i = 0; i < pageRefs.length; i++) {
+            pageRefs[i] =  pageRefs[i];
+            //Tools.log.debug("\tpageRef: " + pageRefs[i]);
+        }
+        BitmapFontWriter.writeFont(font.getData(), pageRefs, fontFile, new BitmapFontWriter.FontInfo(fontName, fontSize), 1, 1);
+        return true;
+    }
+
+    private static FileHandle getFontFile(String filename) {
+        return Gdx.files.local("art/textures" + filename);
+    }
 }

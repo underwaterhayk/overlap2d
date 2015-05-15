@@ -18,16 +18,33 @@
 
 package com.uwsoft.editor.mvc.view.ui.dialog;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.PixmapPacker;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+
+import com.badlogic.gdx.tools.bmfont.BitmapFontWriter;
+import com.badlogic.gdx.utils.Array;
 import com.kotcrab.vis.ui.util.form.SimpleFormValidator;
 import com.kotcrab.vis.ui.widget.*;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.uwsoft.editor.mvc.Overlap2DFacade;
+import com.uwsoft.editor.renderer.actor.LabelItem;
 import com.uwsoft.editor.ui.widget.InputFileWidget;
 
 import java.io.File;
@@ -51,7 +68,7 @@ public class NewProjectDialog extends O2DDialog {
         VisTable mainTable = new VisTable();
 //        mainTable.debug();
         mainTable.padTop(6).padRight(6).padBottom(22);
-        //
+
         VisLabel projectNameLavel = new VisLabel("Project Name:");
         mainTable.add(projectNameLavel).right().padRight(5);
         projectName = createValidableTextField("", new SimpleFormValidator.EmptyInputValidator("Cannot be empty"));
@@ -132,4 +149,6 @@ public class NewProjectDialog extends O2DDialog {
             facade.sendNotification(command, workspacePathField.getValue().path() + File.separator + projectName.getText());
         }
     }
+
+
 }
